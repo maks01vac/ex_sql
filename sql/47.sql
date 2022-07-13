@@ -1,8 +1,7 @@
 -- Определить страны, которые потеряли в сражениях все свои корабли.
-
 WITH Sunk_Out AS (
     SELECT
-        c.class,
+        country,
         COUNT(ship) AS amount_sunk
     FROM
         (
@@ -17,31 +16,38 @@ WITH Sunk_Out AS (
         INNER JOIN Classes c ON s.class = c.class
         OR o.ship = c.class
     GROUP BY
-        c.class
+        country
 ),
-ClassHaving3 AS (
-    SELECT c.class,
-		 COUNT(name) AS amount_name
-		FROM 
-			(SELECT DISTINCT c.class,
-		 name
-			FROM Classes c
-			INNER JOIN Ships s
-				ON c.class=s.class
-			UNION
-			SELECT DISTINCT c.class,
-		 ship
-			FROM Classes c
-			INNER JOIN Outcomes o
-				ON c.class=o.ship) c
-			GROUP BY  c.class HAVING COUNT(name)>=3) c
+C_a AS (
+    SELECT
+        country,
+        COUNT(name) AS amount_name
+    FROM
+        (
+            SELECT
+                DISTINCT country,
+                name
+            FROM
+                Classes c
+                INNER JOIN Ships s ON c.class = s.class
+            GROUP BY
+                country,
+                name
+            UNION
+            SELECT
+                DISTINCT country,
+                ship
+            FROM
+                Classes c
+                INNER JOIN Outcomes o ON c.class = o.ship
+        ) c
     GROUP BY
         country
 )
 SELECT
-    c.class, amount_sunk
+    c.country
 FROM
-    ClassHaving3 c
+    C_a c
     INNER JOIN Sunk_Out s ON c.country = s.country
 WHERE
-    s.amount_sunk = c.amount_name
+    amount_sunk = amount_name
